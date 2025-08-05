@@ -1,5 +1,20 @@
 import React from "react";
+import { SignIn, SignUp, SignedIn, SignedOut } from '@clerk/clerk-react';
 
 export function AuthenticationPage(){
-    return <></>
+    return (
+        <div className="auth-container">
+            <SignedIn>
+                <div className = "auth-container">
+                <p>You are already signed in.</p>
+                </div>
+            </SignedIn>     
+
+            <SignedOut>
+                <SignIn routing="path" path = "/sign-in" />
+                <SignUp routing="path" path = "/sign-up" />
+
+            </SignedOut>  
+        </div>
+      );
 }

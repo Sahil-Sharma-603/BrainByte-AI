@@ -1,9 +1,9 @@
-import { ClerkProviderWithRoutes } from './auth/ClerkProviderWithRoutes';
+import ClerkProviderWithRoutes from './auth/ClerkProviderWithRoutes';
 import {Routes, Route} from 'react-router-dom'
 import {AuthenticationPage} from './auth/AuthenticationPage'
 import {Layout} from './layout/Layout'
 import {HistoryPanel} from './history/HistoryPanel'
-import {ChallengerGenerator} from './challenge/ChallengeGenerator'
+import {ChallengeGenerator} from './challenge/ChallengeGenerator'
 
 import './App.css'
 
@@ -17,7 +17,7 @@ function App() {
     
         <Route element = {<Layout/>}>
           <Route path = "/history" element={<HistoryPanel/>} />
-          <Route path = "/" element={<ChallengerGenerator/>} />
+          <Route path = "/" element={<ChallengeGenerator/>} />
         </Route>
 
       </Routes>
