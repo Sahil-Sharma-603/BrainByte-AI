@@ -1,4 +1,5 @@
 
+// setting up ClerkProvider with BrowserRouter for React Router v6
 import { ClerkProvider } from '@clerk/clerk-react'
 import {BrowserRouter} from 'react-router-dom'
 

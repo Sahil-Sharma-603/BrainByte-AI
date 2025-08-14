@@ -2,6 +2,7 @@ import React from "react";
 import {SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { Outlet, Link, Navigate } from 'react-router-dom';
 
+// Navigation Bar - 
 export function Layout(){
     return(
         <div className="app-layout">

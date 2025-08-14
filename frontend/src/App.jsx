@@ -8,10 +8,13 @@ import {ChallengeGenerator} from './challenge/ChallengeGenerator'
 import './App.css'
 
 function App() {
-  
+  // calling clerkProviderWithRoutes to wrap the routes  - it contains browser router and clerk provider
+  // this is necessary to use clerk authentication with react router v6
+  // wraping whole application under authentication by clerk.
   return <ClerkProviderWithRoutes>
 
       <Routes>
+
         <Route path = "/sign-in/*" element={<AuthenticationPage/>} />
         <Route path = "/sign-up/*" element={<AuthenticationPage/>} />
     
