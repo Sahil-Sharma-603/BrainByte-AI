@@ -9,7 +9,7 @@ from ..database.db import(
     get_user_challenge
 )
 
-from ..utils import authenticate_and_get_user_details
+from ..utlis import authenticate_and_get_user_details
 from ..database.models import get_db
 import json
 from datetime import datetime

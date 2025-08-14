@@ -22,7 +22,7 @@ def authenticate_and_get_user_details(request):
     try:
         request_state = clerk_sdk.autenticate_request(request
         ,AuthenticateRequestOptions(
-            authorized_parties=['http://localhost:5173/']
+            authorized_parties=['http://localhost:5173/'],
             jwt_key = os.getenv('JWT_KEY')
         ))
 
