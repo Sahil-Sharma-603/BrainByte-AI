@@ -26,7 +26,6 @@ class Challenge(Base):
 # Define ChallengeQuota Model - allows to store how many challenges left for a day
 class ChallengeQuota(Base):
     __tablename__ = 'challenge_quotas'
-    
     id = Column(Integer, primary_key=True)
     user_id = Column(String, nullable=False, unique=True)
     last_reset_date = Column(DateTime, default=datetime.utcnow)

@@ -23,7 +23,7 @@ router = APIRouter()
 @router.get("/my-history")
 async def my_history(request: Request, db: Session = Depends(get_db)):
     # authenticate the user and get user details
-    user_details = await authenticate_and_get_user_details(request)
+    user_details = authenticate_and_get_user_details(request)
     if not user_details:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -41,7 +41,7 @@ async def my_history(request: Request, db: Session = Depends(get_db)):
 async def get_quota(request: Request, db: Session = Depends(get_db)):
 
     # Authenticate the user and get user details
-    user_details = await authenticate_and_get_user_details(request)
+    user_details =  authenticate_and_get_user_details(request)
     user_id = user_details.get("user_id")
 
     # get the quota for specfic user from database
@@ -57,6 +57,9 @@ async def get_quota(request: Request, db: Session = Depends(get_db)):
     quota = reset_quota_if_needed(db, quota)
     return quota
 
+
+
+
 # Generate Challenge Request Body
 class ChallengeRequest(BaseModel):
     difficulty: str
@@ -68,11 +71,11 @@ class ChallengeRequest(BaseModel):
             }
         }
     
-# Create Challenge Endpoint - POST Request
+#Create Challenge Endpoint - POST Request
 @router.post("/create")
-async def create_challenge(request:ChallengeRequest, db: Session = Depends(get_db)):
+async def create_challenge(request:ChallengeRequest, request_obj: Request, db: Session = Depends(get_db)):
     try:
-        user_details = await authenticate_and_get_user_details(request)
+        user_details = authenticate_and_get_user_details(request_obj)
         user_id = user_details.get("user_id")
 
         # Check if the user has enough quota to create a challenge
@@ -89,13 +92,15 @@ async def create_challenge(request:ChallengeRequest, db: Session = Depends(get_d
         challenge_data = generate_challenge_with_ai(request.difficulty)
 
         # Now we have the challenfge data, we can create a challenge in the database
-        # **challenge_data unpacks the dictionary into keyword arguments (Fancy Python Trick)
         new_challenge = create_Challenge(
             db=db,
             difficulty=request.difficulty,
             created_by=user_id,
-            **challenge_data       
-            )
+            title = challenge_data['title'],
+            options=json.dumps(challenge_data['options']),
+            correct_answer_id=challenge_data['correct_answer_id'],
+            explanation=challenge_data['explanation']   
+        )
 
         quota.quota_remaining -= 1
         db.commit()
@@ -113,5 +118,53 @@ async def create_challenge(request:ChallengeRequest, db: Session = Depends(get_d
     except Exception as e:
         raise HTTPException(status_code=400, detail="Bad Request 400: " + str(e))
 
+
+
+# @router.post("/create")
+# async def create_challenge(request: ChallengeRequest, request_obj: Request, db: Session = Depends(get_db)):
+#     try:
+#         user_details = authenticate_and_get_user_details(request_obj)
+#         user_id = user_details.get("user_id")
+
+#         quota = get_challenge_quota(db, user_id)
+#         if not quota:
+#             quota = create_challenge_quota(db, user_id)
+        
+#         quota = reset_quota_if_needed(db, quota)
+
+#         if quota.quota_remaining <= 0:
+#             raise HTTPException(status_code=429, detail="Challenge quota exceeded for today. Please try again later.")
+
+#         # ✅ Generate challenge
+#         challenge_data = generate_challenge_with_ai(request.difficulty)
+
+#         # ✅ Remove fallback flag from DB insert
+#         new_challenge = create_Challenge(
+#             db=db,
+#             difficulty=request.difficulty,
+#             created_by=user_id,
+#             title=challenge_data['title'],
+#             options=json.dumps(challenge_data['options']),
+#             correct_answer_id=challenge_data['correct_answer_id'],
+#             explanation=challenge_data['explanation']
+#         )
+
+#         # ✅ Decrement quota ONLY if it's not fallback
+#         if not challenge_data.get("used_fallback", False):
+#             quota.quota_remaining -= 1
+#             db.commit()
+
+#         return {
+#             "id": new_challenge.id,
+#             "difficulty": request.difficulty,
+#             "title": new_challenge.title,
+#             "options": json.loads(new_challenge.options),
+#             "correct_answer_id": new_challenge.correct_answer_id,
+#             "explanation": new_challenge.explanation,
+#             "timestamp": new_challenge.date_created.isoformat()
+#         }
+
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail="Bad Request 400: " + str(e))
 
 

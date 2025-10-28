@@ -9,6 +9,8 @@ from clerk_backend_api import Clerk,  AuthenticateRequestOptions
 from dotenv import load_dotenv
 import os
 from fastapi import HTTPException
+from fastapi import Request
+
 
 # This will Load environment variables from .env file
 load_dotenv()
@@ -18,11 +20,11 @@ clerk_sdk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY'))
 
 # Request Authentication function - frontend will send the JWT token in the request header
 # this function will check if the JWT token is valid or not.
-def authenticate_and_get_user_details(request):
+def authenticate_and_get_user_details(request: Request):
     try:
-        request_state = clerk_sdk.autenticate_request(request
+        request_state = clerk_sdk.authenticate_request(request
         ,AuthenticateRequestOptions(
-            authorized_parties=['http://localhost:5173/'],
+            # authorized_parties=['http://localhost:5173/'],
             jwt_key = os.getenv('JWT_KEY')
         ))
 
