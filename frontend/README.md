@@ -13,7 +13,7 @@ uv add clerk-backend-api, fastapi
 
 3) to run the backend code
 
-uv run server.py
+uv run server.py 
 
 
 # Frontend
