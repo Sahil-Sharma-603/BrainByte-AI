@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {useState} from "react";
 import { MCQChallenge } from '../challenge/MCQChallenge';
+import {useApi} from "../utlis/api.js";
 
 export function ChallengeGenerator(){
 
@@ -10,26 +11,55 @@ export function ChallengeGenerator(){
     const [quota, setQuota] = useState(null);
     const [difficulty, setDifficulty] = useState("easy");
 
+
+    const {makeRequest} = useApi();
+
+    //useEffect - runs after page renders
+    useEffect( ()=> {
+        fetchQuota()
+
+    }, [])
+
     // we need to fetch quota
     const fetchQuota = async () => {
-        try {
-            const response = await fetch('/api/quota');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            setQuota(data.quota);
-        } catch (error) {
-            console.error('Error fetching quota:', error);
-            setError('Error fetching quota');
+        try{
+            const data = await makeRequest("/quota");
+            setQuota(data)
+
+        }catch(err){
+            console.log(err);
         }
     }
 
     // fetch challenge
-    const generateChallenge = async () => {}
+    const generateChallenge = async () => {
+        setIsLoading(true)
+        setError(null)
+
+        try{
+            const data = await makeRequest("/create", {
+                method: "POST",
+                body: JSON.stringify({difficulty})
+            })
+
+            setChallenge(data)
+            fetchQuota()
+
+        }catch(err){
+            setError(err.message || "failed to generate challenge")
+        }finally{
+            setIsLoading(false)
+        }
+
+    }
 
     //next reset time
-    const nextResetTime = () => {}
+    const getNextResetTime = () => {
+        if(!quota?.last_reset_date) return null
+        const resetDate = new Date(quota.last_reset_date)
+        resetDate.setHours(resetDate.getHours() + 24)
+        return resetDate
+    }
 
 
     return (
@@ -39,7 +69,7 @@ export function ChallengeGenerator(){
             <div className="quota-display">
                 <p>Challenges remaning today: {quota?.quota_remaining||0}</p>
                 {quota?.quota_remaining===0 && (
-                        <p>Next reset: {0}</p>
+                        <p>Next reset: {getNextResetTime()?.toLocaleString()}</p>
                 )}
             </div>
 

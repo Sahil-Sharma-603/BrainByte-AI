@@ -1,5 +1,5 @@
 import React from "react";
-import {useState, useEffect} from "react";
+import {useState} from "react";
 
 export function MCQChallenge({challenge, showExplanation = false}){
     const [selectedOption, setSelectedOption] = useState(null);
@@ -17,22 +17,22 @@ export function MCQChallenge({challenge, showExplanation = false}){
 
     const getOptionClass = (index) => {
         if(selectedOption === null) return "option";
-        
-        if(index === challenge.correct_option_index){
+    
+        if(index === challenge.correct_answer_id){
             return "option correct";
         }
-
-        if(selectedOption === index && index !== challenge.correct_option_index){
+    
+        if(selectedOption === index && index !== challenge.correct_answer_id){
             return "option incorrect";
         }
-
-        return "option";
     
+        return "option";
     }
+    
 
     return <div className="challenge-display">
         <p><strong>Difficulty</strong>:{challenge.difficulty}</p>
-        <p className = "challenge-title">challenge.title</p>
+        <p className = "challenge-title">{challenge.title}</p>
         <div className="options">
             {option.map((option, index) => (
                 <div key={index} 
