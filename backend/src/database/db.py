@@ -19,15 +19,16 @@ def create_challenge_quota(db: Session, user_id: str):
 def reset_quota_if_needed(db: Session, quota: models.ChallengeQuota):
     now = datetime.now()
     if now - quota.last_reset_date > timedelta(hours=24):
-        quota.quota_remaining = 10
+        quota.quota_remaining = 15  # Reset to default quota
         quota.last_reset_date = now
         db.commit()
         db.refresh(quota)
     return quota
 
-def create_Challenge(db: Session, difficulty: str, created_by: str, title: str, options: str, correct_answer_id: int, explanation: str):
+def create_Challenge(db: Session, difficulty: str, category: str, created_by: str, title: str, options: str, correct_answer_id: int, explanation: str):
     db_challenge = models.Challenge(
         difficulty=difficulty,
+        category=category, 
         created_by=created_by,
         title=title,
         options=options,

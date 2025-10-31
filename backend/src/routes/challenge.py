@@ -36,78 +36,95 @@ async def my_history(request: Request, db: Session = Depends(get_db)):
 
 
 
+
 # Getting the challenge quota for the user - GET Request
 @router.get("/quota")
 async def get_quota(request: Request, db: Session = Depends(get_db)):
-
     # Authenticate the user and get user details
-    user_details =  authenticate_and_get_user_details(request)
+    user_details = authenticate_and_get_user_details(request)
     user_id = user_details.get("user_id")
 
-    # get the quota for specfic user from database
+    # Get the quota for specific user from database
     quota = get_challenge_quota(db, user_id)
-    # If quota does not exist then there is no quota left for the user
+    
+    # If quota does not exist, create it
     if not quota:
-        return{
-            "user_id": user_id,
-            "quota_remaining": 0,
-            "last_reset_date": datetime.now()
-        }
+        quota = create_challenge_quota(db, user_id)
+    
     # Reset the quota if needed
     quota = reset_quota_if_needed(db, quota)
-    return quota
-
+    
+    # Return as dict for consistency (though FastAPI serializes the model fine)
+    return {
+        "user_id": quota.user_id,
+        "quota_remaining": quota.quota_remaining,
+        "last_reset_date": quota.last_reset_date.isoformat()
+    }
 
 
 
 # Generate Challenge Request Body
 class ChallengeRequest(BaseModel):
     difficulty: str
-    
+    category: str
+
     class Config:
         schema_extra = {
-            "example": {
-                "difficulty": "easy"
-            }
+            "example": {"difficulty": "easy", "category": "Vocabulary"}
         }
-    
-#Create Challenge Endpoint - POST Request
+
+CATEGORIES = [
+    "Working Memory",
+    "Vocabulary",
+    "Grammar",
+    "Applied Math",
+    "Police Logic",
+    "Problem Solving",
+    "Map Navigation",
+    "Reading Comprehension",
+]
+
 @router.post("/create")
-async def create_challenge(request:ChallengeRequest, request_obj: Request, db: Session = Depends(get_db)):
+async def create_challenge(request: ChallengeRequest, request_obj: Request, db: Session = Depends(get_db)):
     try:
         user_details = authenticate_and_get_user_details(request_obj)
+        if not user_details:
+            raise HTTPException(status_code=401, detail="Unauthorized")
         user_id = user_details.get("user_id")
 
-        # Check if the user has enough quota to create a challenge
-        quota = get_challenge_quota(db, user_id)
-        if not quota:
-            quota = create_challenge_quota(db, user_id)
-        
-        quota = reset_quota_if_needed(db, quota)
+        # pull category from request and validate
+        category = request.category
+        if category not in CATEGORIES:
+            raise HTTPException(status_code=422, detail=f"Invalid category: {category}")
 
+        # quota
+        quota = get_challenge_quota(db, user_id) or create_challenge_quota(db, user_id)
+        quota = reset_quota_if_needed(db, quota)
         if quota.quota_remaining <= 0:
             raise HTTPException(status_code=429, detail="Challenge quota exceeded for today. Please try again later.")
 
+        # generate with AI (use request.difficulty and the validated category)
+        challenge_data = generate_challenge_with_ai(request.difficulty, category)
 
-        challenge_data = generate_challenge_with_ai(request.difficulty)
-
-        # Now we have the challenfge data, we can create a challenge in the database
+        # persist (make sure your create_Challenge signature includes category)
         new_challenge = create_Challenge(
             db=db,
             difficulty=request.difficulty,
+            category=category,
             created_by=user_id,
-            title = challenge_data['title'],
+            title=challenge_data['title'],
             options=json.dumps(challenge_data['options']),
             correct_answer_id=challenge_data['correct_answer_id'],
-            explanation=challenge_data['explanation']   
+            explanation=challenge_data['explanation']
         )
 
         quota.quota_remaining -= 1
         db.commit()
-        
+
         return {
             "id": new_challenge.id,
             "difficulty": request.difficulty,
+            "category": category,
             "title": new_challenge.title,
             "options": json.loads(new_challenge.options),
             "correct_answer_id": new_challenge.correct_answer_id,
@@ -115,17 +132,48 @@ async def create_challenge(request:ChallengeRequest, request_obj: Request, db: S
             "timestamp": new_challenge.date_created.isoformat()
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Bad Request 400: " + str(e))
+        # Surface the real reason to the client for easier debugging
+        raise HTTPException(status_code=400, detail=f"Bad Request 400: {e}")
 
 
 
+# # Generate Challenge Request Body
+# class ChallengeRequest(BaseModel):
+
+
+#     difficulty: str
+#     category: str
+    
+#     class Config:
+#         schema_extra = {
+#             "example": {
+#                 "difficulty": "easy",
+#                 "category": "Vocabulary"
+#             }
+#         }
+
+# CATEGORIES = [
+#     "Working Memory",
+#     "Vocabulary",
+#     "Grammar",
+#     "Applied Math",
+#     "Police Logic",
+#     "Problem Solving",
+#     "Map Navigation",
+#     "Reading Comprehension",
+# ]
+
+# #Create Challenge Endpoint - POST Request
 # @router.post("/create")
-# async def create_challenge(request: ChallengeRequest, request_obj: Request, db: Session = Depends(get_db)):
+# async def create_challenge(request:ChallengeRequest, request_obj: Request, db: Session = Depends(get_db)):
 #     try:
 #         user_details = authenticate_and_get_user_details(request_obj)
 #         user_id = user_details.get("user_id")
 
+#         # Check if the user has enough quota to create a challenge
 #         quota = get_challenge_quota(db, user_id)
 #         if not quota:
 #             quota = create_challenge_quota(db, user_id)
@@ -135,28 +183,28 @@ async def create_challenge(request:ChallengeRequest, request_obj: Request, db: S
 #         if quota.quota_remaining <= 0:
 #             raise HTTPException(status_code=429, detail="Challenge quota exceeded for today. Please try again later.")
 
-#         # ✅ Generate challenge
-#         challenge_data = generate_challenge_with_ai(request.difficulty)
 
-#         # ✅ Remove fallback flag from DB insert
+#         challenge_data = generate_challenge_with_ai(request.difficulty,category)
+
+#         # Now we have the challenfge data, we can create a challenge in the database
 #         new_challenge = create_Challenge(
 #             db=db,
 #             difficulty=request.difficulty,
+#             category=category,
 #             created_by=user_id,
-#             title=challenge_data['title'],
+#             title = challenge_data['title'],
 #             options=json.dumps(challenge_data['options']),
 #             correct_answer_id=challenge_data['correct_answer_id'],
-#             explanation=challenge_data['explanation']
+#             explanation=challenge_data['explanation']   
 #         )
 
-#         # ✅ Decrement quota ONLY if it's not fallback
-#         if not challenge_data.get("used_fallback", False):
-#             quota.quota_remaining -= 1
-#             db.commit()
-
+#         quota.quota_remaining -= 1
+#         db.commit()
+        
 #         return {
 #             "id": new_challenge.id,
 #             "difficulty": request.difficulty,
+#             "category": category,
 #             "title": new_challenge.title,
 #             "options": json.loads(new_challenge.options),
 #             "correct_answer_id": new_challenge.correct_answer_id,
@@ -166,5 +214,4 @@ async def create_challenge(request:ChallengeRequest, request_obj: Request, db: S
 
 #     except Exception as e:
 #         raise HTTPException(status_code=400, detail="Bad Request 400: " + str(e))
-
 

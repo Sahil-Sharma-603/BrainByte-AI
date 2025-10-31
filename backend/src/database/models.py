@@ -18,6 +18,7 @@ class Challenge(Base):
     difficulty = Column(String, nullable=False)
     date_created = Column(DateTime, default=datetime.utcnow)
     created_by = Column(String, nullable=False) 
+    category = Column(String, nullable=False, default="Vocabulary")
     title = Column(String, nullable=False)
     options = Column(String, nullable=False)
     correct_answer_id = Column(Integer, nullable=False)
@@ -29,7 +30,7 @@ class ChallengeQuota(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(String, nullable=False, unique=True)
     last_reset_date = Column(DateTime, default=datetime.utcnow)
-    quota_remaining = Column(Integer, default=50)  # Default quota per day
+    quota_remaining = Column(Integer, default=15)  # Default quota per day
 
 
 # convert the python classess into SQL tables

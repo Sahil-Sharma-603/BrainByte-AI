@@ -5,11 +5,23 @@ import {useApi} from "../utlis/api.js";
 
 export function ChallengeGenerator(){
 
+    const CATEGORIES = [
+        "Working Memory",
+        "Vocabulary",
+        "Grammar",
+        "Applied Math",
+        "Police Logic",
+        "Problem Solving",
+        "Map Navigation",
+        "Reading Comprehension",
+      ];
+
     const [challenge, setChallenge] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [quota, setQuota] = useState(null);
     const [difficulty, setDifficulty] = useState("easy");
+    const [category, setCategory] = useState(CATEGORIES[0]); // default category 1 selected
 
 
     const {makeRequest} = useApi();
@@ -39,7 +51,7 @@ export function ChallengeGenerator(){
         try{
             const data = await makeRequest("/create", {
                 method: "POST",
-                body: JSON.stringify({difficulty})
+                body: JSON.stringify({difficulty, category})
             })
 
             setChallenge(data)
@@ -64,7 +76,7 @@ export function ChallengeGenerator(){
 
     return (
         <div className = "challenge-container">
-            <h2>Coding Challenger Generator</h2>
+            <h2>PoliceTest AI</h2>
 
             <div className="quota-display">
                 <p>Challenges remaning today: {quota?.quota_remaining||0}</p>
@@ -89,6 +101,21 @@ export function ChallengeGenerator(){
                 
             </div>
 
+            <div className="category-selector">
+                <label htmlFor="category">Select Category: </label>
+                <select id = "category" 
+                        value = {category} 
+                        onChange={(e) => setCategory(e.target.value)} 
+                        disabled = {isLoading}
+                >
+                  {CATEGORIES.map((c)=>(
+                    <option key = {c} value = {c}> {c} </option>
+                  ))}
+
+                </select>
+                
+            </div>
+
             <button
             className="generate-button"
             onClick={generateChallenge} disabled={isLoading || quota?.quota_remaining === 0}
@@ -96,7 +123,7 @@ export function ChallengeGenerator(){
 
             {error && <div className="error-message"><p>{error}</p></div>}
 
-            {challenge && <MCQChallenge challenge={challenge} />}
+            {challenge && <MCQChallenge key = {challenge.id} challenge={challenge} />}
         </div>
     );
 }
