@@ -6,7 +6,7 @@ Use Command - npm run dev
 
 To run backend
 
-Use Command - uv server.py
+Use Command - uv run server.py
 
 To add dependencies 
 
