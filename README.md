@@ -1,7 +1,8 @@
 ````markdown
 # 🧠 BrainByte – AI Quiz App for Law Enforcement Aspirants
 
-BrainByte is a **Python-based AI-powered quiz application** designed for individuals preparing for law enforcement exams.
+BrainByte is a **Python-based AI-powered quiz application** designed for individuals preparing
+for law enforcement exams.
 
 The platform generates AI-powered questions to help improve:
 
